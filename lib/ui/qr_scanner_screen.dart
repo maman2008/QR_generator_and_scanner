@@ -4,6 +4,14 @@ import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+// Warna yang sama dengan home screen
+const Color primaryColor = Color(0xFF3A2EC3);
+const Color secondaryColor = Color(0xFF6C63FF);
+const Color backgroundColor = Color(0xFFF8F9FF);
+const Color cardColor = Colors.white;
+const Color textPrimary = Color(0xFF1A1A2E);
+const Color textSecondary = Color(0xFF6B7280);
+
 class QrScannerScreen extends StatefulWidget {
   const QrScannerScreen({super.key});
 
@@ -15,7 +23,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> with WidgetsBindingOb
   final MobileScannerController _controller = MobileScannerController(
     detectionSpeed: DetectionSpeed.noDuplicates,
     returnImage: true,
-    formats: [BarcodeFormat.qrCode], // fokus QR saja
+    formats: [BarcodeFormat.qrCode],
   );
 
   String? _barcodeValue;
@@ -41,7 +49,6 @@ class _QrScannerScreenState extends State<QrScannerScreen> with WidgetsBindingOb
     if (!status.isGranted) {
       final result = await Permission.camera.request();
       if (!result.isGranted) {
-        // Optional: tampilkan dialog jika ditolak permanen
         if (result.isPermanentlyDenied) {
           openAppSettings();
         }
@@ -50,6 +57,7 @@ class _QrScannerScreenState extends State<QrScannerScreen> with WidgetsBindingOb
       _controller.start();
     }
   }
+  
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
@@ -68,13 +76,26 @@ class _QrScannerScreenState extends State<QrScannerScreen> with WidgetsBindingOb
     }
     super.didChangeAppLifecycleState(state);
   }
+  
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        title: const Text('Scan QR Code'),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        title: const Text(
+          'Scan QR Code',
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor: primaryColor,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
+        centerTitle: true,
       ),
       body: Stack(
         fit: StackFit.expand,
@@ -82,30 +103,66 @@ class _QrScannerScreenState extends State<QrScannerScreen> with WidgetsBindingOb
           MobileScanner(
             controller: _controller,
             onDetect: _handleBarcode,
-            placeholderBuilder: (context) => const Center(
-              child: CircularProgressIndicator(),
+            placeholderBuilder: (context) => Center(
+              child: CircularProgressIndicator(
+                color: primaryColor,
+              ),
             ),
           ),
+          // Overlay gradient
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withOpacity(0.6),
+                  Colors.transparent,
+                  Colors.transparent,
+                  Colors.black.withOpacity(0.6),
+                ],
+                stops: const [0.0, 0.2, 0.8, 1.0],
+              ),
+            ),
+          ),
+          // Scanner frame
           Center(
             child: CustomPaint(
               size: const Size(280, 280),
               painter: ScannerOverlayPainter(),
             ),
           ),
+          // Guide text
           Positioned(
-            bottom: 80,
+            bottom: 100,
             left: 0,
             right: 0,
-            child: const Center(
-              child: Text(
-                'Arahkan QR Code ke dalam kotak',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  shadows: [Shadow(blurRadius: 10, color: Colors.black)],
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    'Arahkan QR Code ke dalam kotak',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 8),
+                Text(
+                  'QR Code akan otomatis terdeteksi',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.7),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
@@ -125,37 +182,138 @@ class _QrScannerScreenState extends State<QrScannerScreen> with WidgetsBindingOb
         context: context,
         barrierDismissible: false,
         builder: (ctx) => AlertDialog(
-          title: const Text('QR Terdeteksi'),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          backgroundColor: cardColor,
+          title: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [primaryColor, secondaryColor],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Center(
+              child: Text(
+                'QR Terdeteksi',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Image.memory(image, height: 180),
-              const SizedBox(height: 16),
-              SelectableText(
-                _barcodeValue!,
-                style: const TextStyle(fontSize: 16),
-                textAlign: TextAlign.center,
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: primaryColor.withOpacity(0.1)),
+                ),
+                child: Image.memory(
+                  image,
+                  height: 150,
+                  fit: BoxFit.contain,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: backgroundColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Data yang berhasil di-scan:',
+                      style: TextStyle(
+                        color: textSecondary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SelectableText(
+                      _barcodeValue!,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                        color: textPrimary,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
           actions: [
-            TextButton.icon(
-              icon: const Icon(Icons.copy),
-              label: const Text('Copy'),
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: _barcodeValue!));
-                ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(content: Text('Disalin ke clipboard')),
-                );
-              },
-            ),
-            TextButton.icon(
-              icon: const Icon(Icons.close),
-              label: const Text('Tutup'),
-              onPressed: () {
-                Navigator.pop(ctx);
-                _controller.start();
-              },
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.copy, size: 20),
+                    label: const Text(
+                      'Copy',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    onPressed: () {
+                      Clipboard.setData(ClipboardData(text: _barcodeValue!));
+                      ScaffoldMessenger.of(ctx).showSnackBar(
+                        SnackBar(
+                          content: const Text('Berhasil disalin ke clipboard'),
+                          backgroundColor: primaryColor,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      );
+                      Navigator.pop(ctx);
+                      _controller.start();
+                    },
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: primaryColor,
+                      side: BorderSide(color: primaryColor),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.close, size: 20),
+                    label: const Text(
+                      'Tutup',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(ctx);
+                      _controller.start();
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: primaryColor,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -170,32 +328,73 @@ class ScannerOverlayPainter extends CustomPainter {
     final paint = Paint()
       ..color = Colors.white
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 5.0;
+      ..strokeWidth = 3.0;
 
     const cornerLength = 30.0;
-    final path = Path();
+    const cornerWidth = 8.0;
 
     // Kiri atas
-    path.moveTo(0, cornerLength);
-    path.lineTo(0, 0);
-    path.lineTo(cornerLength, 0);
+    canvas.drawLine(
+      Offset(0, cornerLength),
+      Offset(0, 0),
+      paint..strokeWidth = cornerWidth,
+    );
+    canvas.drawLine(
+      Offset(0, 0),
+      Offset(cornerLength, 0),
+      paint..strokeWidth = cornerWidth,
+    );
 
     // Kanan atas
-    path.moveTo(size.width - cornerLength, 0);
-    path.lineTo(size.width, 0);
-    path.lineTo(size.width, cornerLength);
+    canvas.drawLine(
+      Offset(size.width - cornerLength, 0),
+      Offset(size.width, 0),
+      paint..strokeWidth = cornerWidth,
+    );
+    canvas.drawLine(
+      Offset(size.width, 0),
+      Offset(size.width, cornerLength),
+      paint..strokeWidth = cornerWidth,
+    );
 
     // Kiri bawah
-    path.moveTo(0, size.height - cornerLength);
-    path.lineTo(0, size.height);
-    path.lineTo(cornerLength, size.height);
+    canvas.drawLine(
+      Offset(0, size.height - cornerLength),
+      Offset(0, size.height),
+      paint..strokeWidth = cornerWidth,
+    );
+    canvas.drawLine(
+      Offset(0, size.height),
+      Offset(cornerLength, size.height),
+      paint..strokeWidth = cornerWidth,
+    );
 
     // Kanan bawah
-    path.moveTo(size.width - cornerLength, size.height);
-    path.lineTo(size.width, size.height);
-    path.lineTo(size.width, size.height - cornerLength);
+    canvas.drawLine(
+      Offset(size.width - cornerLength, size.height),
+      Offset(size.width, size.height),
+      paint..strokeWidth = cornerWidth,
+    );
+    canvas.drawLine(
+      Offset(size.width, size.height),
+      Offset(size.width, size.height - cornerLength),
+      paint..strokeWidth = cornerWidth,
+    );
 
-    canvas.drawPath(path, paint);
+    // Border scanning animation line
+    final scanningPaint = Paint()
+      ..color = secondaryColor
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.0;
+
+    final scanningRect = Rect.fromLTWH(
+      2,
+      2,
+      size.width - 4,
+      size.height - 4,
+    );
+
+    canvas.drawRect(scanningRect, scanningPaint);
   }
 
   @override
@@ -211,35 +410,143 @@ class ScanGuideBottomSheet extends StatelessWidget {
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: cardColor,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: const [
-          BoxShadow(color: Colors.black26, blurRadius: 20, offset: Offset(0, 10)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 25,
+            offset: const Offset(0, 10),
+          ),
         ],
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
-            'Scan QR Code',
-            style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Arahkan kamera ke QR Code di dalam kotak agar hasil lebih akurat.',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 16, color: Colors.grey),
-          ),
-          const SizedBox(height: 24),
-          Image.asset(
-            'assets/images/scan-icon.png',
-            width: 200,
-            height: 200,
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: primaryColor.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.qr_code_scanner,
+              size: 40,
+              color: primaryColor,
+            ),
           ),
           const SizedBox(height: 16),
-          FilledButton(
+          const Text(
+            'Scan QR Code',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: textPrimary,
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            'Arahkan kamera ke QR Code di dalam kotak untuk hasil terbaik',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 15,
+              color: textSecondary,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 24),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: backgroundColor,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Icon(Icons.check_circle, color: primaryColor, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Pastikan pencahayaan cukup',
+                        style: TextStyle(
+                          color: textPrimary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.check_circle, color: primaryColor, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Jaga jarak yang sesuai',
+                        style: TextStyle(
+                          color: textPrimary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Icon(Icons.check_circle, color: primaryColor, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Tempatkan QR di dalam kotak',
+                        style: TextStyle(
+                          color: textPrimary,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                elevation: 0,
+              ),
+              child: const Text(
+                'Mulai Scan',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Mulai Scan'),
+            child: Text(
+              'Lewati panduan',
+              style: TextStyle(
+                color: textSecondary,
+                fontSize: 14,
+              ),
+            ),
           ),
         ],
       ),
